@@ -1,11 +1,20 @@
 import os
 from flask import Flask, render_template, request
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import datetime
 
 app = Flask(__name__)
 
 # This pulls the password from the environment, not hardcoded
 MY_SECRET_PASSWORD = os.environ.get("ADMIN_PASSWORD")
-
+scope = [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive"
+]
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)
+client = gspread.authorize(creds)
+sheet = client.open("VentureTomorrowDB").sheet1 # Replace with your sheet name
 
 @app.route('/')
 def home():
@@ -17,7 +26,10 @@ def join_team():
     name = request.form.get('name')
     email = request.form.get('email')
     role = request.form.get('role')
+    timestamp = str(datetime.datetime.now())
 
+    # Save to Google Sheet
+    sheet.append_row([name, email, role, timestamp])
     # Appends the signup to a text file
     with open("signups.txt", "a") as file:
         file.write(f"Name: {name} | Email: {email} | Role: {role}\n")
